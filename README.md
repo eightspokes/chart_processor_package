@@ -9,9 +9,22 @@ A Python service for processing and serving FAA aviation charts as tile pyramids
 
 The Aviation Chart Server is a comprehensive solution for downloading, processing, and serving Federal Aviation Administration (FAA) aeronautical charts as web-based tile pyramids. This service automatically manages the complete lifecycle of aviation charts, from download to serving, making them accessible through standard web mapping interfaces.
 
+### Chart Source and Processing
+
+The FAA publishes digital aeronautical charts on a regular schedule (every 28/56 days) at: https://www.faa.gov/air_traffic/flight_info/aeronav/digital_products/vfr/
+
+Our system automatically:
+1. **Downloads** individual chart files from FAA servers according to the published schedule
+2. **Combines** multiple individual charts into seamless, unified chart layers
+3. **Processes** the combined charts into optimized tile pyramids for web serving
+4. **Serves** the processed tiles through standard web mapping APIs
+
+This allows users to access comprehensive, up-to-date aviation charts through any web mapping interface without dealing with individual chart boundaries or manual updates.
+
 ### Key Features:
 - **Automatic Chart Updates**: Monitors FAA release schedules and automatically downloads new chart versions
 - **Multi-Chart Support**: Processes Sectional, Terminal Area, IFR Enroute, and Helicopter charts
+- **Chart Combination**: Seamlessly combines individual charts into unified layers
 - **Tile Pyramid Generation**: Converts charts into zoomable tile pyramids for web mapping
 - **Geospatial Processing**: Crops, reprojects, and optimizes charts using GDAL
 - **RESTful API**: Serves charts through standard XYZ tile endpoints
@@ -163,10 +176,11 @@ The service combines individual charts into one raster and serves them as tile p
 
 ## Chart update schedule 
 
-FAA publishes their digital aeronautical charts every 28/56 days.
-The schedule can be found here: https://www.faa.gov/air_traffic/flight_info/aeronav/productcatalog/doles/
+The FAA publishes their digital aeronautical charts on a fixed schedule every 28/56 days. These charts are available for download at: https://www.faa.gov/air_traffic/flight_info/aeronav/digital_products/vfr/
 
-The schedule is stored under the update_schedule key in the JSON config file - chart_service_config_json. It consists of a list of years, each containing an array of release dates in MM-DD-YYYY format:
+The official release schedule can be found here: https://www.faa.gov/air_traffic/flight_info/aeronav/productcatalog/doles/
+
+Our system tracks this schedule and stores it in the JSON config file under the `update_schedule` key. It consists of a list of years, each containing an array of release dates in MM-DD-YYYY format:
 
 ```
 "update_schedule": [
@@ -206,11 +220,18 @@ python3 chartServer.py
 ```
 
 ## Chart Download Pipeline
-The chart processing system downloads raster-based FAA charts for various chart types (Sectional, Terminal Area, IFR Enroute, Helicopter) based on a fixed update schedule.
-Each update cycle involves retrieving .zip files containing .tif rasters, extracting them, processing the data (cropping, reprojecting, tiling), and finally storing them in a tile pyramid format suitable for web map viewing.
 
-The chart files and download locations are configured in: services/chart_processor/chart_service_config.json
-Each chart type has:
+The chart processing system downloads raster-based FAA charts from https://www.faa.gov/air_traffic/flight_info/aeronav/digital_products/vfr/ for various chart types (Sectional, Terminal Area, IFR Enroute, Helicopter) based on the fixed FAA update schedule.
+
+Each update cycle involves:
+1. **Downloading** individual .zip files containing .tif rasters from FAA servers
+2. **Extracting** and organizing the chart files  
+3. **Combining** multiple individual charts into seamless, unified layers
+4. **Processing** the data (cropping, reprojecting, optimizing)
+5. **Generating** tile pyramids suitable for web map viewing
+6. **Serving** the combined charts through standard tile endpoints
+
+The chart files and download locations are configured in the JSON config file. Each chart type has:
 
 A base_url where .zip files containing .tif rasters can be downloaded.
 A list of areas that identifies all expected .zip filenames to download for that chart type.

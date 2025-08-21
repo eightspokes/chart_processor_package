@@ -1,60 +1,117 @@
 #  Aviation Chart Server
 
+![Aviation Charts Overview](https://raw.githubusercontent.com/eightspokes/chart_processor_package/main/images/aviation-charts-overview.png)
+
 A Python service for processing and serving FAA aviation charts as tile pyramids.
 
 ## Objective
-At the time when this service was created, there were no service available that would let us serve aeronautical charts as a tile pyramid. 
-In the past a service called "Chartbundle" was used, but when it stopped working there was a need to create our own.
-The VFR Chart Processing Service checks daily if the charts are due to update, and they are, a script will start downloading, and processing scripts.
-The service combines individual charts into one raster and serves them as tile pyramid that allows zoom functionality.
 
-![Aviation Charts Overview](https://raw.githubusercontent.com/eightspokes/chart_processor_package/main/images/aviation-charts-overview.png)
-*Aviation Chart Server processing and serving multiple chart types as interactive map tiles*
+The Aviation Chart Server was originally created for displaying FAA aeronautical charts in the National General Aviation Flight Information Database (NGAFID) https://ngafid.org
 
-## What is the Aviation Chart Server?
+Aviation applications require the ability to overlay aeronautical charts to visualize flight paths and airspace information. However, when charts are combined into a single raster covering the entire United States territory, they become extremely large files that are impractical to render in web browsers or mobile applications. The Aviation Chart Server solves this by implementing a tile pyramid system that breaks large charts into manageable, zoomable tiles for efficient web delivery. 
 
-The Aviation Chart Server is a comprehensive solution for downloading, processing, and serving Federal Aviation Administration (FAA) aeronautical charts as web-based tile pyramids. This service automatically manages the complete lifecycle of aviation charts, from download to serving, making them accessible through standard web mapping interfaces.
+The FAA publishes digital aeronautical charts on a regular schedule (every 28/56 days) at: https://www.faa.gov/air_traffic/flight_info/aeronav/digital_products/vfr/
+ 
+This server automates the update process to ensure charts are always current.
 
 ### Chart Source and Processing
 
-The FAA publishes digital aeronautical charts on a regular schedule (every 28/56 days) at: https://www.faa.gov/air_traffic/flight_info/aeronav/digital_products/vfr/
-
-Our system automatically:
+The Aviation Chart Server
 1. **Downloads** individual chart files from FAA servers according to the published schedule
-2. **Combines** multiple individual charts into seamless, unified chart layers
+2. **Combines** multiple individual charts into unified chart layers
 3. **Processes** the combined charts into optimized tile pyramids for web serving
 4. **Serves** the processed tiles through standard web mapping APIs
+5. **Checks for Updates** nightly and if an update is due, downloads new chart files from the FAA's website.
 
-This allows users to access comprehensive, up-to-date aviation charts through any web mapping interface without dealing with individual chart boundaries or manual updates.
 
-### Key Features:
-- **Automatic Chart Updates**: Monitors FAA release schedules and automatically downloads new chart versions
-- **Multi-Chart Support**: Processes Sectional, Terminal Area, IFR Enroute, and Helicopter charts
-- **Chart Combination**: Seamlessly combines individual charts into unified layers
-- **Tile Pyramid Generation**: Converts charts into zoomable tile pyramids for web mapping
-- **Geospatial Processing**: Crops, reprojects, and optimizes charts using GDAL
-- **RESTful API**: Serves charts through standard XYZ tile endpoints
-- **Background Processing**: Handles chart updates without interrupting service
+## Consuming tiles:
+To consume tiles,use the url with z x y arguments as below: 
+E.g:   http://localhost:8187/terminal-area/{z}/{x}/{-y}.png
+(host and port are configurable values, see below)
+
 
 ### Chart Types Supported:
 
 #### Sectional Charts
 ![Sectional Chart](https://raw.githubusercontent.com/eightspokes/chart_processor_package/main/images/sectional-chart-example.png)
-VFR navigation charts covering large geographic areas with airspace, airports, and navigation aids.
+
 
 #### Terminal Area Charts (TAC)
 ![Terminal Area Chart](https://raw.githubusercontent.com/eightspokes/chart_processor_package/main/images/terminal-area-chart-example.png)
-Detailed charts for complex airspace around major airports with high traffic density.
 
-#### IFR Enroute Charts
+
+#### IFR Enroute Charts(Low and High)
 ![IFR Enroute Chart](https://raw.githubusercontent.com/eightspokes/chart_processor_package/main/images/ifr-enroute-chart-example.png)
-Instrument flight rules charts showing airways, fixes, and navigation information.
+
 
 #### Helicopter Charts
 ![Helicopter Chart](https://raw.githubusercontent.com/eightspokes/chart_processor_package/main/images/helicopter-chart-example.png)
 Low-altitude charts optimized for helicopter operations and navigation.
 
+
+## Installation
+
+### Prerequisites: GDAL Installation
+
+**This package requires GDAL to be installed first.** GDAL is a geospatial library used for processing aviation charts.
+
+### macOS
+The easiest way to install gdal for mac is Homebrew
+```bash
+brew install gdal
+pip install aviation-chart-server
+```
+
+### Using Conda 
+
+**Step 1: Install Miniconda**
+Download and install Miniconda from: https://docs.conda.io/en/latest/miniconda.html
+
+**Step 2: Install GDAL and the package**
+```bash
+# Create a new environment with GDAL
+conda create -n aviation-charts -c conda-forge python gdal
+conda activate aviation-charts
+
+# Install the package
+pip install aviation-chart-server
+```
+
+**Alternative: If you already have conda**
+```bash
+# Just install GDAL in your current environment
+conda install -c conda-forge gdal
+pip install aviation-chart-server
+```
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get install gdal-bin libgdal-dev python3-gdal
+pip install aviation-chart-server
+```
+
+**CentOS/RHEL:**
+```bash
+sudo yum install gdal-devel python3-gdal
+pip install aviation-chart-server
+```
+
+**Windows:**
+For Windows, we strongly recommend using conda as system GDAL installation is complex. If you must use system GDAL:
+1. Download GDAL from: https://gdal.org/download.html#windows
+2. Install OSGeo4W or use pre-compiled binaries
+3. Add GDAL to your PATH
+4. Run: `pip install aviation-chart-server`
+
+
 ## Quick Start
+
+### Building the Package
+
+Run the installation command from terminal:
+```
+pip install aviation-chart-server
+```
 
 After installing GDAL and the package, you can start the server:
 
@@ -67,13 +124,27 @@ aviation-chart-server --port 3000 --host 0.0.0.0
 
 # Test mode for a specific date
 aviation-chart-server --test-date 12-26-2024
+
+# Process with custom zoom level (default: 8)
+aviation-chart-server --zoom 10
+
+# Process specific chart types only
+aviation-chart-server --chart-type sectional terminal-area
+
+# Combined options
+aviation-chart-server --port 3000 --zoom 12 --chart-type helicopter ifr-enroute-low
 ```
 
 The server will start and be available at `http://localhost:8187` (or your specified port).
 
-## Building the Package
 
-For developers who want to build the package from source:
+
+## Instalation guide for developers who want to build the package from source or contribute to the project.
+
+### Getting the Source Code
+```bash
+git clone https://github.com/eightspokes/chart_processor_package.git
+```
 
 ### Prerequisites
 - Python 3.8 or higher
@@ -110,102 +181,5 @@ python -m build
 pip install --force-reinstall dist/aviation_chart_server-1.0.0-py3-none-any.whl
 ```
 
-## Installation
-
-### Prerequisites: GDAL Installation
-
-**This package requires GDAL to be installed first.** GDAL is a geospatial library used for processing aviation charts.
-
-### macOS
-The easiest way to install gdal for mac is Homebrew
-```bash
-brew install gdal
-pip install aviation-chart-server
-```
 
 
-### Using Conda 
-
-**Step 1: Install Miniconda**
-Download and install Miniconda from: https://docs.conda.io/en/latest/miniconda.html
-
-**Step 2: Install GDAL and the package**
-```bash
-# Create a new environment with GDAL
-conda create -n aviation-charts -c conda-forge python gdal
-conda activate aviation-charts
-
-# Install the package
-pip install aviation-chart-server
-```
-
-**Alternative: If you already have conda**
-```bash
-# Just install GDAL in your current environment
-conda install -c conda-forge gdal
-pip install aviation-chart-server
-```
-
-**For development: Using environment file**
-```bash
-# Clone or download the repository first
-conda env create -f environment.yml
-conda activate aviation-charts
-```
-
-### Alternative: System GDAL Installation
-
-**Ubuntu/Debian:**
-```bash
-sudo apt-get install gdal-bin libgdal-dev python3-gdal
-pip install aviation-chart-server
-```
-
-**CentOS/RHEL:**
-```bash
-sudo yum install gdal-devel python3-gdal
-pip install aviation-chart-server
-```
-
-**Windows:**
-For Windows, we strongly recommend using conda as system GDAL installation is complex. If you must use system GDAL:
-1. Download GDAL from: https://gdal.org/download.html#windows
-2. Install OSGeo4W or use pre-compiled binaries
-3. Add GDAL to your PATH
-4. Run: `pip install aviation-chart-server`
-
-
-
-## Chart update schedule 
-
-The FAA publishes their digital aeronautical charts on a fixed schedule every 28/56 days. These charts are available for download at: https://www.faa.gov/air_traffic/flight_info/aeronav/digital_products/vfr/
-
-The official release schedule can be found here: https://www.faa.gov/air_traffic/flight_info/aeronav/productcatalog/doles/
-
-Our system tracks this schedule and stores it in the JSON config file under the `update_schedule` key. It consists of a list of years, each containing an array of release dates in MM-DD-YYYY format:
-
-```
-"update_schedule": [
-  {
-    "year": 2024,
-    "dates": ["12-26-2024"]
-  },
-  {
-    "year": 2025,
-    "dates": ["02-20-2025", "04-17-2025", ... ]
-  }
-]
-```
-
-### Automatic Update Behavior
-
-When the chart server starts, the program checks if today’s date matches one of the scheduled update dates.
-If a match is found, it runs chartProcessor.py to download and process the updated charts.
-If the charts/ directory or its required subdirectories are missing on startup, the server automatically performs a fresh download using the closest available release date.
-The system (chartServer.py) also runs a background thread that checks for updates nightly at midnight (00:00) and performs processing if needed.
-
-## Consuming tiles:
-Currently, host/port for chart service are configured for "localhost: 8187 ".
-Host/port configuration can be changed in: chart_service_config.json You will also need to change host/port in src/main/javascript/map.js
-E.g:   http://localhost:8187/terminal-area/{z}/{x}/{-y}.png
-****

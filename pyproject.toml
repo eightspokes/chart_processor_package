@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aviation-chart-server"
-version = "1.0.3"
+version = "1.0.4"
 authors = [
     {name = "Roman Kozulia", email = "romanmuni8@gmail.com"},
 ]

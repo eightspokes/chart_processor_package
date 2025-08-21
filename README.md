@@ -46,7 +46,7 @@ E.g:   http://localhost:8187/terminal-area/{z}/{x}/{-y}.png
 
 #### Helicopter Charts
 ![Helicopter Chart](https://raw.githubusercontent.com/eightspokes/chart_processor_package/main/images/helicopter-chart-example.png)
-Low-altitude charts optimized for helicopter operations and navigation.
+
 
 
 ## Installation
